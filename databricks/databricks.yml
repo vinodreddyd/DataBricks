@@ -1,0 +1,67 @@
+# ============================================================================
+# databricks.yml — Databricks Asset Bundle
+# ----------------------------------------------------------------------------
+# Deploys two things together:
+#   1. The parameterized notebook (NoteBook_Main_Param.py)
+#   2. The Databricks App (FastAPI backend + bundled React frontend)
+#
+# Usage:
+#     databricks bundle deploy --target dev
+#     databricks bundle run dbx-ingestion-app --target dev
+# ============================================================================
+
+bundle:
+  name: dbx-ingestion-app
+
+variables:
+  workspace_root:
+    description: "Root workspace folder for the platform code"
+    default: "/Workspace/Shared/dbx_ingestion"
+  default_cluster_id:
+    description: "Cluster the UI uses by default for Jobs runs/submit"
+    default: ""
+  history_warehouse_id:
+    description: "SQL Warehouse used to read platform_meta.pipeline_runs"
+    default: ""
+
+resources:
+  apps:
+    dbx-ingestion-app:
+      name: "dbx-ingestion-ui"
+      description: "Self-service UI for Bronze ingestion configs."
+      source_code_path: "../backend"
+      resources:
+        - name: "default_cluster"
+          description: "Default cluster used by the runs/submit calls."
+          job_cluster:
+            existing_cluster_id: ${var.default_cluster_id}
+            permission: "CAN_USE"
+        - name: "history_warehouse"
+          description: "SQL Warehouse used to read pipeline_runs."
+          sql_warehouse:
+            id: ${var.history_warehouse_id}
+            permission: "CAN_USE"
+
+  # The parameterized notebook is uploaded as a Workspace File so
+  # NoteBook_Main_Param.py is co-located with the existing NoteBook_Main.py
+  workspace_files:
+    notebook_param:
+      path: "${var.workspace_root}/Data-Platform/NoteBook_Main_Param"
+      source: "./NoteBook_Main_Param.py"
+
+targets:
+  dev:
+    mode: development
+    workspace:
+      host: "https://<your-workspace>.cloud.databricks.com"
+    variables:
+      default_cluster_id:   "<paste-dev-cluster-id>"
+      history_warehouse_id: "<paste-dev-warehouse-id>"
+
+  prod:
+    mode: production
+    workspace:
+      host: "https://<your-workspace>.cloud.databricks.com"
+    variables:
+      default_cluster_id:   "<paste-prod-cluster-id>"
+      history_warehouse_id: "<paste-prod-warehouse-id>"

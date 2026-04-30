@@ -1,0 +1,52 @@
+# ============================================================================
+# app.yaml — Databricks App manifest
+# ----------------------------------------------------------------------------
+# Tells the Databricks Apps runtime how to start the FastAPI server and
+# which env vars to inject (paths, catalog, default cluster, SQL warehouse).
+#
+# Update the values below for your workspace before running:
+#     databricks apps deploy dbx-ingestion-ui
+# ============================================================================
+
+command:
+  - "uvicorn"
+  - "app:app"
+  - "--host"
+  - "0.0.0.0"
+  - "--port"
+  - "8000"
+
+env:
+  # ── Where the app writes generated YAML configs ────────────────────────────
+  - name: DBX_GENERATED_DIR
+    value: "/Workspace/Shared/dbx_ingestion/domain-configs/sources/generated"
+
+  # ── Where env-overrides/{dev,prod}.yaml live ───────────────────────────────
+  - name: DBX_ENV_DIR
+    value: "/Workspace/Shared/dbx_ingestion/domain-configs/env-overrides"
+
+  # ── The parameterized notebook the app triggers ────────────────────────────
+  - name: DBX_NOTEBOOK_PATH
+    value: "/Workspace/Shared/dbx_ingestion/Data-Platform/NoteBook_Main_Param"
+
+  # Cache TTL for the schema browser (uses Lakehouse Federation via the
+  # warehouse below — no extra notebook needed).
+  - name: DBX_INTROSPECT_CACHE_TTL_S
+    value: "300"
+
+  # ── Default cluster used by Jobs runs/submit (override per-run from UI) ────
+  - name: DBX_DEFAULT_CLUSTER_ID
+    valueFrom: "default_cluster"     # mapped from app resource binding
+
+  # ── SQL Warehouse used to read platform_meta.pipeline_runs for history ────
+  - name: DBX_WAREHOUSE_ID
+    valueFrom: "history_warehouse"
+
+  - name: DBX_CATALOG
+    value: "ops_dev"
+
+  - name: DBX_META_SCHEMA
+    value: "platform_meta"
+
+  - name: LOG_LEVEL
+    value: "INFO"
